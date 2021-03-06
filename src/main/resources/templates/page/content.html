@@ -1,0 +1,123 @@
+{{#layout}}
+
+{{#style}}
+<link rel="stylesheet" href="/editor/css/froala_editor.css">
+<link rel="stylesheet" href="/editor/css/froala_style.css">
+<link rel="stylesheet" href="/editor/css/plugins/code_view.css">
+<link rel="stylesheet" href="/editor/css/plugins/colors.css">
+<link rel="stylesheet" href="/editor/css/plugins/draggable.css">
+<link rel="stylesheet" href="/editor/css/plugins/emoticons.css">
+<link rel="stylesheet" href="/editor/css/plugins/fullscreen.css">
+<link rel="stylesheet" href="/editor/css/plugins/image_manager.css">
+<link rel="stylesheet" href="/editor/css/plugins/image.css">
+<link rel="stylesheet" href="/editor/css/plugins/line_breaker.css">
+<link rel="stylesheet" href="/editor/css/plugins/table.css">
+<link rel="stylesheet" href="/editor/css/plugins/char_counter.css">
+<link rel="stylesheet" href="/editor/css/plugins/video.css">
+<link rel="stylesheet" href="/editor/css/plugins/quick_insert.css">
+<style>
+.tree-wrapper { background-image: url('/img/bg-tree-gray.jpg'); overflow-y: auto; }
+.context-menu-list.context-menu-root {
+  border-radius: 0; -webkit-box-shadow: 1px 1px 2px rgba(0,0,0,.5); box-shadow: 1px 1px 2px rgba(0,0,0,.5); }
+.context-menu-item { font-size: 13px; font-family: '맑은고딕'; }
+.contents-wrapper { border: 0; padding-left: 16px; overflow-y: hidden; height: 100%; padding-left: 0; border-left: 1px solid #ccc;  }
+#contents-detail { border: 0; }
+.select-row { padding: 0; margin: 3px auto; }
+.select-row i { cursor: pointer; color: #05854A; font-size: 26px; margin-top: 4px; }
+#btn-create { float: right; }
+.tree-btn { padding: 6px; min-width: 32px; font-size: 16px; }
+#sel_category, .tree-btn, .callout .button-group { margin-bottom: 0; }
+#editor-wrapper { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+span.drag-source { border: 1px solid grey; border-radius: 3px; padding: 2px; background-color: silver; }
+span.fancytree-node.fancytree-drag-source { outline: 1px dotted grey; }
+span.fancytree-node.fancytree-drop-accept { outline: 1px dotted green; }
+span.fancytree-node.fancytree-drop-reject { outline: 1px dotted red; }
+</style>
+{{/style}}
+
+<div class="callout secondary small">
+  <div class="grid-x">
+    <div class="cell small-3">
+	<nav role="navigation" class="nav" style="width: 100%;">
+	  <ul class="breadcrumbs">
+	    <li>홈</li>
+	    <li>도움말작성</li>
+	  </ul>
+	</nav>
+	</div>
+	<div id="wrapper-group-sel" class="cell small-5">
+		<select id="sel_category" onchange="onSelectChanged(this);">
+		    <option value="">----- 도움말그룹 선택 -----</option>
+			{{#list}}
+		    <option value="{{groupId}}">{{#name}}{{name}}{{/name}}</option>
+			{{/list}}
+		  </select>
+		  <i class="button secondary hollow fi-plus tree-btn" id="btn-expand-all" title="전체메뉴펼치기"></i>
+		  <i class="button secondary hollow fi-minus tree-btn" id="btn-collapse-all" title="전체메뉴접기"></i>
+	</div>
+	<div class="cell small-4">
+  	  	<div class="button-group float-right">
+		  <a class="button small alert" href="javascript:void(0);" id="btn-delete">삭제</a>
+		  <a class="button small primary hollow" href="javascript:void(0);" id="btn-download">다운로드</a>
+		  <a class="button small primary" href="javascript:void(0);" id="btn-modify" data-open="bf-modal-comment">HTML작성</a>
+		  <a class="button small success" href="javascript:void(0);" id="btn-modify-complete">작성완료</a>
+		  <a class="button small primary" href="javascript:void(0);" id="btn-pdf-upload" data-open="bf-modal-comment">PDF업로드</a>
+		  <form id="fileFrm" method="post" enctype="multipart/form-data">
+		  	<input id="pdfFile" type='file' hidden onchange="handlePdf(this.files[0]);" accept=".pdf" />
+	  	  </form>
+		</div>
+	</div>
+  </div>
+</div>
+
+<div class="grid-x contents-grid-wrapper">
+	
+	<!-- 좌측 컨텐츠그룹 선택 및 메뉴 구조 TREE -->
+	<div class="cell tree-wrapper">
+		<div id="tree"></div>
+	</div>
+	
+	<!-- 컨텐츠 상세내용 --> <!-- 706px for A4 -->
+	<div class="cell contents-wrapper">
+	  <div class="grid-x" style="height: 100%; position: relative;">
+	    <iframe id="contents-detail" class="cell" width="100%" height="100%" border="0"></iframe>
+	    <div id="editor-wrapper"></div>
+	  </div>
+    </div>
+	
+</div>
+
+<iframe id="ifrm" style="display: none;"></iframe>
+
+{{#script}}
+<script type="text/javascript" src="/editor/js/froala_editor.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/align.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/code_beautifier.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/code_view.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/colors.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/draggable.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/emoticons.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/font_size.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/font_family.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/fullscreen.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/image.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/image_manager.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/line_breaker.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/link.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/lists.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/paragraph_format.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/paragraph_style.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/table.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/video.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/url.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/entities.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/char_counter.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/inline_style.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/save.min.js"></script>
+<script type="text/javascript" src="/editor/js/plugins/quick_insert.min.js"></script>
+<script src="/page/content.js"></script>
+<script>
+</script>
+{{/script}}
+
+{{/layout}}
