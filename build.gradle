@@ -59,7 +59,7 @@ dependencies {
 }
 
 processResources {
-    exclude('static/SynapEditor/**/*')
+    //exclude('static/SynapEditor/**/*')
 }
 
 test {

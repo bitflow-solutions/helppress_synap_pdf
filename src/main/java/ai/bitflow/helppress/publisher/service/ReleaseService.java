@@ -281,21 +281,8 @@ public class ReleaseService {
 		}
 		
 		ChangeHistory item = row.get();
-		
-		// 원래 파일명을 쪼갬
-		int lastDotIdx = item.getFilePath().lastIndexOf(".");
-		// 히스토리에 있는 파일명
-		String SRC_FILENAME  = HISTORY_ROOT_PATH + item.getRealPath();
-		String orgFileName = item.getFilePath().substring(0, lastDotIdx);
-		// 원래 파일명
-		String[] fileStrArr = item.getRealPath().split("/");
-		String realFileName = fileStrArr[fileStrArr.length-1];
-		// String realFileNameNoExt = realFileName.substring(0, realFileName.lastIndexOf(".")); 
-		String DEST_FILENAME = fileStrArr.length>1?fileStrArr[0] + "-" + orgFileName + "-" + realFileName:orgFileName + "-" + realFileName;
-
-		logger.debug("DEST_FILENAME" + DEST_FILENAME);
-		
-		File srcFile = new File(SRC_FILENAME);
+		logger.debug("DEST_FILENAME " + item.getRealPath());
+		File srcFile = new File(HISTORY_ROOT_PATH + item.getRealPath());
 		FileInputStream fis = null;
 		ServletOutputStream out = null;
 		
@@ -304,7 +291,7 @@ public class ReleaseService {
 			res.setHeader(HttpHeaders.PRAGMA, 				"no-cache");
 			res.setHeader(HttpHeaders.CONTENT_TYPE, 		"application/zip");
 			res.setHeader(HttpHeaders.CONTENT_LENGTH, 		"" + srcFile.length());
-			res.setHeader(HttpHeaders.CONTENT_DISPOSITION, 	"attachment; filename=\"" + DEST_FILENAME + "\"");
+			res.setHeader(HttpHeaders.CONTENT_DISPOSITION, 	"attachment; filename=\"" + srcFile.getName() + "\"");
 			out = res.getOutputStream();
             FileCopyUtils.copy(fis, out);
 			return true;

@@ -11,7 +11,7 @@ html, body, .bf-body-wrapper { height: 100%; font-family: "맑은 고딕", "돋�
 .footer-text > p:first-child { color: #bbb; }
 .context-menu-list.context-menu-root {
   border-radius: 0; -webkit-box-shadow: 1px 1px 2px rgba(0,0,0,.5); box-shadow: 1px 1px 2px rgba(0,0,0,.5); }
-.context-menu-item { font-size: 13px; font-family: '맑은고딕'; }
+.context-menu-item { font-size: 13px; font-family: '맑은 고딕'; }
 .contents-grid-wrapper { height: 100%; }
 .contents-wrapper { border: 0; padding-left: 0; overflow-y: hidden; height: 100%; }
 #img-search { float: right; }
@@ -91,7 +91,7 @@ table td.btn-list-item:hover { background-color: #77b2d8; cursor: pointer; }
 .top-bar, .top-bar ul { background-color: #3e3b3b; }
 .top-bar-right > img { cursor: pointer; }
 .top-bar-right li:last-child { margin-left: 3px; }
-.logo-img { background-image: url('../img/logo-help.png'); width: 134px; height: 28px; margin-top: 3px; }
+.logo-img { background-image: url('../img/logo-help.png'); width: 134px; height: 28px; margin-top: 3px; background-repeat: no-repeat; }
 .logo-text { margin-top: 11px; }
 .menu .is-active { background-image: url('../img/bg-underline.gif'); background-position: bottom; background-repeat: no-repeat; }
 .menu .is-active > a { background-color: inherit; color: white; }

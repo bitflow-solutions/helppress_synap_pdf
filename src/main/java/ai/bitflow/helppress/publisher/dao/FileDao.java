@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.List;
 
@@ -136,18 +137,17 @@ public class FileDao {
 	 * @return
 	 * @throws IOException
 	 */
-	public boolean updateContentFile(Contents item) {
+	public String updateContentFile(Contents item) {
 		
 		File dir = new File(UPLOAD_ROOT_PATH);
 		if (!dir.exists()) {
 			boolean success = dir.mkdirs();
 		}
 		 
-//		BufferedWriter writer = null;
+		BufferedWriter writer = null;
 		OutputStream  os = null;
 		String destPdfFilename = UPLOAD_ROOT_PATH + item.getGroupId() + File.separator + item.getId() + ApplicationConstant.EXT_PDF;
 		try {
-//			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(destPdfFilename), "UTF-8"));
 			StringBuilder content = new StringBuilder();
 			content.append(getHeader(item.getTitle()));
 			content.append(item.getContent());
@@ -155,6 +155,9 @@ public class FileDao {
 			
 			PdfRendererBuilder builder = new PdfRendererBuilder();
 			os = new FileOutputStream(destPdfFilename);
+//			writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+//			writer.write(content.toString());
+			
 			File fontMalgun = new File(FileDao.class.getResource("/static/fonts/MALGUN.TTF").getFile());
 			builder.useFont(fontMalgun, "sans-serif");
 			builder.useFont(fontMalgun, "맑은 고딕");
@@ -172,28 +175,28 @@ public class FileDao {
 //			builder.useFont(new File(FileDao.class.getResource("/static/fonts/H2HDRM.TTF").getFile()), "HY헤드라인M");
 			
 			W3CDom w3cDom = new W3CDom();
-			String baseUri = "file:///" + (dir.getAbsolutePath() + "/export").replace("\\", "/");
+			String baseUri = "file:///" + dir.getAbsolutePath();
 			Document w3cDoc = w3cDom.fromJsoup(Jsoup.parse(content.toString(), baseUri));
 			builder.withUri(destPdfFilename);
 			builder.toStream(os);
 			builder.withW3cDocument(w3cDoc, baseUri);
 			builder.useHttpStreamImplementation(new OkHttpStreamFactory());
             builder.run();
-		    return true;
+		    return destPdfFilename;
 		} catch (IOException e) {
 			e.printStackTrace();
-			return false;
+			return null;
 		} finally {
+//			if (writer!=null) {
+//				try {
+//					writer.close();
+//				} catch (IOException e) { }
+//			}
 			if (os!=null) {
 				try {
 					os.close();
 				} catch (IOException e) { }
 			}
-//			if (fop!=null) {
-//				try {
-//					fop.close();
-//				} catch (IOException e) { }
-//			}
 		}
 	}
 	
@@ -203,7 +206,7 @@ public class FileDao {
 	 * @param item
 	 * @return
 	 */
-	public boolean newPdfFile(ContentsReq params, Contents item, long now) {
+	public boolean newPdfFile(ContentsReq params, Contents item, long now, File file1) {
 		
 		File dir = new File(UPLOAD_ROOT_PATH + item.getGroupId());
 		if (!dir.exists()) {
@@ -223,12 +226,18 @@ public class FileDao {
 		FileOutputStream writer1 = null;
 		FileOutputStream writer2 = null;
 		try {
-			
-			writer1 = new FileOutputStream(UPLOAD_ROOT_PATH + item.getGroupId() + File.separator + fileName + ApplicationConstant.EXT_PDF);
-			writer1.write(params.getFile1().getBytes());
-
-			writer2 = new FileOutputStream(HISTORY_ROOT_PATH + item.getGroupId() + File.separator + now + ApplicationConstant.EXT_PDF);
-			writer2.write(params.getFile1().getBytes());
+			if (params.getFile1()!=null) {
+				// PDF 파일 생성
+				writer1 = new FileOutputStream(UPLOAD_ROOT_PATH + item.getGroupId() + File.separator + fileName + ApplicationConstant.EXT_PDF);
+				writer1.write(params.getFile1().getBytes());
+				// HISTORY용 PDF 파일 생성
+				writer2 = new FileOutputStream(HISTORY_ROOT_PATH + item.getGroupId() + File.separator + item.getGroupId() + "-" + item.getId() + "-" + now + ApplicationConstant.EXT_PDF);
+				writer2.write(params.getFile1().getBytes());
+			} else  if (file1!=null) {
+				// HISTORY용 PDF 파일 생성
+				writer2 = new FileOutputStream(HISTORY_ROOT_PATH + item.getGroupId() + File.separator + item.getGroupId() + "-" + item.getId() + "-" + now + ApplicationConstant.EXT_PDF);
+				writer2.write(Files.readAllBytes(file1.toPath()));
+			}
 		    return true;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -277,12 +286,12 @@ public class FileDao {
 				// 첫번째 도움말그룹으로 포워딩 할 index.html 생성
 				makeNewIndexHtml(indexHtmlCodes, now);
 				// 변경이력 저장
-				chdao.addHistory(userid, type, method, "메인 인덱스 파일", "index" + ApplicationConstant.EXT_HTML
-						, now + ApplicationConstant.EXT_HTML, "도움말그룹 추가");
+				chdao.addHistory(userid, type, method, "메인 인덱스 파일", "", "index" + ApplicationConstant.EXT_HTML
+						, "index" + "-" + now + ApplicationConstant.EXT_HTML, "도움말그룹 추가");
 			}
 			// 변경이력 저장
-			chdao.addHistory(userid, type, method, item1.getName(), item1.getGroupId() + ApplicationConstant.EXT_HTML
-					, fileTimeInMillis + ApplicationConstant.EXT_HTML, "도움말그룹 추가");
+			chdao.addHistory(userid, type, method, item1.getName(), "", item1.getGroupId() + ApplicationConstant.EXT_HTML
+					, item1.getGroupId() + "-" +  fileTimeInMillis + ApplicationConstant.EXT_HTML, "도움말그룹 추가");
 		}
 		return true;
 	}
@@ -359,11 +368,8 @@ public class FileDao {
 					UPLOAD_ROOT_PATH + File.separator + item.getGroupId() + ApplicationConstant.EXT_HTML), "UTF-8"));
 			
 			writer2 = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
-					HISTORY_ROOT_PATH + File.separator + now + ApplicationConstant.EXT_HTML), "UTF-8"));
-			/*
-			String htmlpath = new File(UPLOAD_ROOT_PATH + File.separator + item.getGroupId() + ApplicationConstant.EXT_HTML
-					).getAbsolutePath();
-			*/
+					HISTORY_ROOT_PATH + File.separator + item.getGroupId() + "-" + now + ApplicationConstant.EXT_HTML), "UTF-8"));
+
 			writer1.write(htmlCodes);
 			writer2.write(htmlCodes);
 		    return true;
@@ -409,7 +415,7 @@ public class FileDao {
 			writer1.write(htmlCodes);
 			
 			writer2 = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
-					HISTORY_ROOT_PATH + File.separator + now + ApplicationConstant.EXT_HTML), "UTF-8"));
+					HISTORY_ROOT_PATH + File.separator + "index-" + now + ApplicationConstant.EXT_HTML), "UTF-8"));
 			writer2.write(htmlCodes);
 			
 		    return true;

@@ -50,7 +50,7 @@ public class ApiContentController {
 	@GetMapping("/{groupid}/{id}")
 	public ContentsRes get(@PathVariable String groupid, @PathVariable String id) {
 		ContentsRes ret = new ContentsRes();
-		Contents item = cservice.getContent(id);
+		Contents item = cservice.getContent(groupid, id);
 		ContentResult result = new ContentResult();
 		if (item!=null) {
 			result.setTitle(item.getTitle());
@@ -69,8 +69,8 @@ public class ApiContentController {
 	 * @param id
 	 * @return
 	 */
-	@PutMapping("/{groupid}/{id}")
-	public ContentsRes updateContent(ContentsReq params, @PathVariable String groupid, @PathVariable String id, HttpSession sess) {
+	@PutMapping("/{groupid}")
+	public ContentsRes updateContent(ContentsReq params, @PathVariable String groupid, HttpSession sess) {
 		logger.debug("params " + params.toString());
 		ContentsRes ret1 = new ContentsRes();
 		ContentResult result = new ContentResult();
@@ -80,24 +80,22 @@ public class ApiContentController {
 		} else {
 			if (params.getFile1()==null) {
 				// 에디터로 HTML 수정한 경우
-				cservice.updateContent(params, groupid, id, username);
+				cservice.updateContent(params, groupid, username);
 			} else {
 				// PDF파일 업로드 한 경우
 				cservice.updatePdfContent(params, groupid, username);
-				
-				UpdateNodeReq params2 = new UpdateNodeReq();
-				params2.setGroupId(groupid);
-				params2.setKey(params.getKey());
-				params2.setMenuCode(params.getMenuCode());
-				NodeUpdateResult res = nservice.updateNode(params2, username);
-				NodeUpdateRes ret2 = new NodeUpdateRes();
-				res.setUsername(username);
-				ret2.setResult(res);
-				broker.convertAndSend("/node", res);
 			}
-			result.setKey(params.getMenuCode());
-			ret1.setResult(result);
+
+			UpdateNodeReq params2 = new UpdateNodeReq();
+			params2.setGroupId(groupid);
+			params2.setKey(params.getKey());
+			params2.setMenuCode(params.getMenuCode());
+			NodeUpdateResult res = nservice.updateNode(params2, username);
+			res.setUsername(username);
+			broker.convertAndSend("/node", res);
 		}
+		result.setKey(params.getMenuCode());
+		ret1.setResult(result);
 		return ret1;
 	}
 

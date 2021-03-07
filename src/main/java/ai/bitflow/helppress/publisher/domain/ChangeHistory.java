@@ -26,6 +26,8 @@ public class ChangeHistory {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(insertable=false, updatable=false)
 	private Integer id;
+	@Column(length=20)
+	private String groupId;
 	@Column(length=10)
 	private String type;
 	@Column(length=10)

@@ -1,5 +1,6 @@
 package ai.bitflow.helppress.publisher.service;
 
+import java.io.File;
 import java.util.Calendar;
 import java.util.Optional;
 
@@ -44,29 +45,41 @@ public class ContentsService implements ApplicationConstant {
 	 * @return
 	 */
 	@Transactional
-	public String updateContent(ContentsReq params, String groupId, String key, String userid) {
+	public String updateContent(ContentsReq params, String groupId, String userid) {
 		// id가 폴더이면 childDoc, id가 파일이면 업데이트
-		PkContents pk = new PkContents(groupId, key);
+		PkContents pk = new PkContents(groupId, params.getKey());
 		Optional<Contents> row1 = contentsrepo.findById(pk);
-		if (row1.isPresent()) {
+		logger.debug("row1.isPresent() " + row1.isPresent());
+		Contents item1 = null;
+		if (!row1.isPresent()) {
+			item1 = new Contents();
+			item1.setGroupId(groupId);
+			item1.setId(params.getMenuCode());
+		} else {
 			// 기존 파일 업데이트
-			Contents item1 = row1.get();
-			item1.setType(ApplicationConstant.TYPE_HTML);
-			item1.setContent(params.getContent());
-			Contents item2 = contentsrepo.save(item1);
-			fdao.updateContentFile(item2);
-			
-			// 변경이력 저장
-			String type     = TYPE_CONTENT;
-			String method   = METHOD_MODIFY;
-			String filePath = params.getMenuCode() + ApplicationConstant.EXT_CONTENT;
-
-			long now = Calendar.getInstance().getTimeInMillis();
-			chdao.addHistory(userid, type, method, params.getTitle(), groupId + "/" + filePath, groupId + "/" + now + ApplicationConstant.EXT_CONTENT, "도움말 수정");
-		
-			return String.valueOf(item2.getId());
+			item1 = row1.get();
 		}
-		return null;
+		item1.setAuthor(userid);
+		item1.setType(ApplicationConstant.TYPE_HTML);
+		item1.setContent(params.getContent());
+		logger.debug("content " + item1.toString());
+		Contents item2 = contentsrepo.save(item1);
+		String destFileName = fdao.updateContentFile(item2);
+		
+		// 변경이력 저장
+		String type     = TYPE_CONTENT;
+		String method   = METHOD_MODIFY;
+		String filePath = params.getMenuCode() + ApplicationConstant.EXT_CONTENT;
+
+		File historyFile = new File(destFileName);
+		long now = Calendar.getInstance().getTimeInMillis();
+		fdao.newPdfFile(params, item1, now, historyFile);
+		
+		chdao.addHistory(userid, type, method, params.getTitle(), groupId, filePath
+				, groupId + "/" + groupId +"-" + filePath.replace(ApplicationConstant.EXT_PDF, "-" + now + ApplicationConstant.EXT_CONTENT)
+				, params.getComment());
+	
+		return String.valueOf(item2.getId());
 	}
 	
 	@Transactional
@@ -111,9 +124,10 @@ public class ContentsService implements ApplicationConstant {
 		
 		contentsrepo.save(item1);
 		long now = Calendar.getInstance().getTimeInMillis();
-		fdao.newPdfFile(params, item1, now);
+		fdao.newPdfFile(params, item1, now, null);
 		// 변경이력 저장
-		chdao.addHistory(userid, type, method, params.getTitle(), groupId + "/" + filePath, groupId + "/" + now + ApplicationConstant.EXT_PDF, params.getComment());
+		chdao.addHistory(userid, type, method, params.getTitle(), groupId, filePath, 
+				groupId + "/" + groupId +"-" + filePath.replace(ApplicationConstant.EXT_PDF, "-" + now + ApplicationConstant.EXT_PDF), params.getComment());
 		return item1.getId();
 	}
 	
@@ -122,10 +136,10 @@ public class ContentsService implements ApplicationConstant {
 	 * @param id
 	 * @return
 	 */
-	public Contents getContent(String id) {
-		// Optional<Contents> row = contentsrepo.findById(Integer.parseInt(id));
-		// return row.isPresent()?row.get():null;
-		return null;
+	public Contents getContent(String groupid, String id) {
+		PkContents pk = new PkContents(groupid, id);
+		Optional<Contents> row = contentsrepo.findById(pk);
+		return row.isPresent()?row.get():null;
 	}
 	
 	/**

@@ -131,7 +131,8 @@ function initTree() {
 
 function commentPopUp(contentType) {
   console.log('contentType ' + contentType);
-  contentType = contentType;
+  this.contentType = contentType;
+  $("#bf-content-comment").val("");
   if (contentType=='PDF') {
     $(".fi-page-filled").empty().html("&nbsp;&nbsp;PDF 파일 업로드")
   } else {
@@ -169,31 +170,7 @@ function initEvents() {
 	});
 	$("#btn-modify-complete").click(function(e) {
 		// 도움말 수정완료 버튼 클릭
-		$("#btn-modify-complete").hide();
-		$(".spinner").show();
-		var url = URL_API_CONTENT + selectedGroupId + "/" + selectedContentId;
-		$.ajax({
-			url: url,
-			method: "PUT",
-			data: { 
-				title: selectedContentTitle,
-				content: editor.html.get(),
-			}
-		})
-		.done(function(msg) {
-		  if (msg.result) {
-			loadPage(selectedContentId);
-		  }
-		  $("#btn-modify").show();
-		  $("#btn-delete").show();
-		  $("#btn-download").show();
-		  alert('수정하였습니다');
-		})
-		.always(function() {
-			setTimeout(function() {
-				$(".spinner").hide();
-			}, 500);
-	    });
+		onEditCompleted();
 	});
 	
 	// (1) 파일 타입
@@ -359,59 +336,61 @@ function loadTree() {
  * (HTML 도움말인 경우) 도움말 수정
  */
 function editContent() {
-  // $("#contents-detail").attr("src", "/editor/html/popular/iframe.html");
   console.log('editContent');
-  $("#contents-detail").hide();
-  $("#btn-pdf-upload").hide();
-  $("#editor-wrapper").show();
-  if (!editor) {
-	  /* iframe: true */
-	  editor = new FroalaEditor('div#editor-wrapper', {
-		events: {
-	     "image.beforeUpload": function(files) {
-	     var editor = this;
-	      if (files.length) {
-	        // Create a File Reader.
-	        var reader = new FileReader();
-	        // Set the reader to insert images when they are loaded.
-	        reader.onload = function(e) {
-	          var result = e.target.result;
-	          editor.image.insert(result, null, null, editor.image.get());
-	        };
-	        // Read image as base64.
-	        reader.readAsDataURL(files[0]);
-	      }
-	      editor.popups.hideAll();
-	      // Stop default upload chain.
-	      return false;
-	     }
-	   }
-	  }, function () {
-	    console.log('editor ' + editor.html.get());
-	  });
-  }
-  $("#contents-detail").hide();
-  $("#editor-wrapper").show();
-  $("#btn-modify-complete").show();
-  $("#btn-modify").hide();
-  $("#btn-download").hide();
-  $("#btn-delete").hide();
-  /*
-  var url = URL_API_CONTENT + selectedGroupId + "/" + selectedContentId;
+  var url = "/api/v1/ecm/content/" + selectedGroupId + "/" + selectedContentId;
   $.ajax({
 	url: url,
 	method: "GET"
   })
   .done(function(msg) {
-    // editor.openHTML(msg.result.contents);
+    editor.openHTML(msg.result.contents);
     $("#contents-detail").hide();
-	$("#editor-wrapper").show();
+    $("#btn-pdf-upload").hide();
+    $("#editor-wrapper").show();
+    $("#contents-detail").hide();
+    $("#editor-wrapper").show();
     $("#btn-modify-complete").show();
     $("#btn-modify").hide();
     $("#btn-download").hide();
     $("#btn-delete").hide();
   });
-  */ 
+}
+
+function onEditCompleted() {
+  $("#btn-modify-complete").hide();
+  $(".spinner").show();
+  var data = { 
+	title: selectedContentTitle,
+	content: editor.getPublishingHtml(),
+	key: selectedContentId,
+	comment: $("#bf-content-comment").val(),
+  };
+  if ($("#bf-menu-code").val().length>3) {
+	data["menuCode"] = $("#bf-menu-code").val();
+  }
+  var url = URL_API_CONTENT + selectedGroupId;
+  $.ajax({
+	url: url,
+	method: "PUT",
+	data: data
+  })
+  .done(function(msg) {
+	if (msg.result) {
+	  console.log('msg ' + JSON.stringify(msg));
+	  selectedContentId = msg.result.key
+	  loadPage(selectedContentId);
+	}
+    $("#btn-modify").show();
+    $("#btn-delete").show();
+    $("#btn-download").show();
+    alert('수정하였습니다');
+  })
+  .always(function() {
+	$("#bf-menu-code").val("");
+	setTimeout(function() {
+		$(".spinner").hide();
+	}, 500);
+  });
 }
 
 /**
@@ -781,8 +760,8 @@ function initSocket() {
 /**
  * PDF 파일 업로드
  */
-function handlePdf(file) {
-	console.log('file ' + file);
+function handlePdf() {
+	console.log('handlePdf');
     var node = _tree.getActiveNode();
     selectedContentId = node.key;
     selectedContentTitle = node.title;
@@ -790,7 +769,6 @@ function handlePdf(file) {
 	var formData = new FormData(form);
 	formData.append("file1",   $("#pdfFile")[0].files[0]);
 	formData.append("title",   selectedContentTitle);
-	formData.append("key",     selectedContentId);
 	formData.append("comment", $("#bf-content-comment").val());
 	$("#bf-content-comment").val("");
 	if ($("#bf-menu-code").val().length>3) {
@@ -817,6 +795,7 @@ $(function() {
 	jQuery.ajaxSettings.traditional = true;
 	initTree();
 	initEvents();
+	initEditor();
 	initSocket();
 	var hash = window.location.hash;
 	if (hash.length>1) {

@@ -71,7 +71,7 @@ table td.btn-list-item:hover { background-color: #77b2d8; cursor: pointer; }
 .top-bar, .top-bar ul { background-color: white; }
 .top-bar-right li:last-child { margin-left: 3px; }
 .menu .menu-text { width: 252px; padding: 0 1rem; display: inline-flex; }
-.logo-img { background-image: url('../img/ic-happy.png'); background-size: contain; width: 108px; height: 35px; }
+.logo-img { background-image: url('../img/ic-happy.png'); background-size: contain; width: 108px; height: 35px; background-repeat: no-repeat; }
 .logo-text { margin-top: 11px;  }
 .menu .menu-text { font-weight: normal; }
 .menu .is-active { background-image: url('/img/bg-underline.gif'); background-position: bottom; background-repeat: no-repeat; }

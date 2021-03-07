@@ -7,11 +7,12 @@
 .list-row { width: 100%; height: calc(100% - 150px); }
 .list-row .col { height: 100%; overflow-y: auto; padding-right: 0; }
 .list-table th, .list-table td { color: #555; font-weight: normal; }
-.list-table td { font-size: 12px; border: 1px solid #ddd; border-collapse: collapse; padding-left: 6px; padding-right: 6px; }
+.list-table td { font-size: 11px; border: 1px solid #ddd; border-collapse: collapse; padding: 5px 6px; }
 .list-table a { text-decoration: underline; }
 .contents-area div.cell { height: calc(100% - 32px); overflow-y: auto; }
 .callout a.button { display: block; }
 tbody th, tbody td { padding: 0.1rem 0.625rem 0.1rem; }
+thead th, thead td, tfoot th, tfoot td { padding: 5px 6px; }
 .tr-release { background-color: #1976d2; }
 .tr-release > td { color: white; }
 .tr-released { background-color: gray !important; }
@@ -69,7 +70,7 @@ tbody th, tbody td { padding: 0.1rem 0.625rem 0.1rem; }
 				<td class="text-center">{{method}}</td>
 				<td class="text-center">{{type}}</td>
 				<td class="text-left">{{#title}}{{title}}{{/title}}</td>
-				<td class="text-left"><a href="/history/{{id}}" target="ifrm">{{#filePath}}{{filePath}}{{/filePath}}</a></td>
+				<td class="text-left"><a href="/history/{{id}}" target="ifrm">{{#groupId}}{{groupId}}/{{/groupId}}{{#filePath}}{{filePath}}{{/filePath}}</a></td>
 				<td class="text-left">{{#comment}}{{comment}}{{/comment}}</td>
 				<td class="text-center">{{#userid}}{{userid}}{{/userid}}</td>
 				<td class="text-center">{{updDtStr}}</td>

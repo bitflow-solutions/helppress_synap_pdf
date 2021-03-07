@@ -91,11 +91,6 @@ public class NodeService {
 		Sequences seqs = new Sequences();
 		seqrepo.save(seqs);
 
-//		if (params.getFolder()==null || params.getFolder()==false) {
-//			// 폴더의 경우 INSERT하여 고유키(시퀀스)만 추출한 뒤 테이블에서 바로 삭제
-//			contentsrepo.save(item1);
-//		}
-
 		// 테이블 저장 후 ID 반환 (JavaScript 트리에서 노드 key로 사용됨)
 		Integer seq = seqs.getId();
 		String key = item1.getId();
@@ -105,13 +100,14 @@ public class NodeService {
 		// 메뉴 트리에 노드 추가
 		ndao.addNode(params);
 		
-		// 변경이력 저장
+		// 변경이력 저장 : 그룹 HTML
 		String type = ApplicationConstant.TYPE_GROUP;;
 		String filePath = params.getGroupId() + ApplicationConstant.EXT_HTML;
 		Optional<ContentsGroup> row = grepo.findById(params.getGroupId());
 		if (row.isPresent()) {
 			long now = Calendar.getInstance().getTimeInMillis();
-			chdao.addHistory(userid, type, method, row.get().getName(), filePath, now + ApplicationConstant.EXT_HTML, ApplicationConstant.REASON_TREE_ADD);
+			chdao.addHistory(userid, type, method, row.get().getName(), null, filePath,
+					filePath.replace(ApplicationConstant.EXT_HTML, "-" + now + ApplicationConstant.EXT_HTML), ApplicationConstant.REASON_TREE_RENAME);
 		}
 		
 		ret.setGroupId(params.getGroupId());
@@ -157,7 +153,8 @@ public class NodeService {
 			}
 			// 2) 파일 삭제
 			boolean success = fdao.deleteFile(params.getGroupId() + File.separator + params.getKey());
-			chdao.addHistory(userid, type, method, params.getTitle(), params.getGroupId() + File.separator + item2.getFilePath(), null, ApplicationConstant.REASON_DELETE_CONTENT);
+			chdao.addHistory(userid, type, method, params.getTitle(), params.getGroupId(), item2.getFilePath(),
+					null, ApplicationConstant.REASON_DELETE_CONTENT);
 			// 3) Todo: 첨부 이미지 폴더 삭제
 		} else {
 			type = ApplicationConstant.TYPE_FOLDER;
@@ -186,8 +183,9 @@ public class NodeService {
 		Optional<ContentsGroup> row = grepo.findById(params.getGroupId());
 		if (row.isPresent()) {
 			// 도움말 그룹 히스토리 저장
-			chdao.addHistory(userid, ApplicationConstant.TYPE_GROUP, ApplicationConstant.METHOD_MODIFY, 
-					row.get().getName(), ret.getGroupId() + ApplicationConstant.EXT_HTML, null, ApplicationConstant.REASON_DELETE_CONTENT_OR_FOLDER);	
+			chdao.addHistory(userid, ApplicationConstant.TYPE_GROUP, ApplicationConstant.METHOD_MODIFY, row.get().getName(), null, 
+					ret.getGroupId() + ApplicationConstant.EXT_HTML, 
+					null, ApplicationConstant.REASON_DELETE_CONTENT_OR_FOLDER);	
 		}
 		
 		return ret;
@@ -235,15 +233,9 @@ public class NodeService {
 			fdao.makeOneContentGroupHTML(item1, now);
 		}
 		
-		// 변경이력 저장
-//		logger.debug("rename " + params.getRename());
-		if (params.getRename()!=null && params.getRename()==true) {
-			chdao.addHistory(userid, type, method, title, filePath, now + ApplicationConstant.EXT_HTML, 
-					ApplicationConstant.REASON_TREE_RENAME);
-		} else {
-			chdao.addHistory(userid, type, method, title, filePath, now + ApplicationConstant.EXT_HTML, 
-					ApplicationConstant.REASON_CHANGE_TREE);
-		}
+		// 변경이력 저장 : 그룹 HTML
+		chdao.addHistory(userid, type, method, title, null, filePath, 
+				filePath.replace(ApplicationConstant.EXT_HTML, "-" + now + ApplicationConstant.EXT_HTML), ApplicationConstant.REASON_TREE_RENAME);
 
 		ret.setMethod(method);
 		ret.setUsername(userid);

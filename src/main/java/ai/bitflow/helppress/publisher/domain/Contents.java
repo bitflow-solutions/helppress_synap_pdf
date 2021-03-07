@@ -46,4 +46,5 @@ public class Contents {
 
 	@Transient
 	private String title;
+	
 }
