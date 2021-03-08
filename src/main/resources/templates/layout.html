@@ -115,7 +115,20 @@ window.alert = function(message) {
 	setTimeout(function() {
 		$("#snackbar").html("").foundation('close');
 	}, 2500);
-}
+};
+
+window.confirm = function(message, callback) {
+  $("#snackbar").html('<p>' + message + '</p>'
+  	+ '<div style="float: right;"><a class="button tiny secondary hollow" id="btn-popup-cancel">아니오</a>'
+	+ '<a class="button tiny success" id="btn-popup-ok" style="margin-left: 6px;">예</a></div>').foundation('open');
+  $("#btn-popup-ok").click(function() {
+  	callback(true);
+  });	
+  $("#btn-popup-cancel").click(function() {
+  	callback(false);
+  });
+};
+ 
 function doLogout() {
 	location.href = "/logout";
 }

@@ -60,10 +60,10 @@ tbody th, tbody td { padding: 0.1rem 0.625rem 0.1rem; }
 			<tbody>
    				{{#clist}}
 				<tr>
-					<td class="text-center"><input type="checkbox" id="{{id}}" class="changed-files" name="fileIds" value="{{id}}" {{#del}}disabled{{/del}}/></td>
+					<td class="text-center"><input type="checkbox" id="{{id}}" class="changed-files" name="fileIds" value="{{#groupId}}{{groupId}}/{{/groupId}}{{#filePath}}{{filePath}}{{/filePath}}" {{#del}}disabled{{/del}}/></td>
 					<td class="text-center">{{method}}</td>
 					<td>{{#title}}{{title}}{{/title}}</td>
-					<td>{{#filePath}}{{filePath}}{{/filePath}}</td>
+					<td>{{#groupId}}{{groupId}}/{{/groupId}}{{#filePath}}{{filePath}}{{/filePath}}</td>
 			 		<td class="text-center" >{{#userid}}{{userid}}{{/userid}}</td>
 					<td class="text-center">{{updDtStr}}</td>
 				</tr>

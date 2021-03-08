@@ -109,4 +109,8 @@ public class ChangeHistoryDao {
 		return chrepo.findById(id);
 	}
 
+	public List<ChangeHistory> findByFilename(String groupid, String filename) {
+		return chrepo.findAllByGroupIdAndFilePath(groupid, filename);
+	}
+	
 }

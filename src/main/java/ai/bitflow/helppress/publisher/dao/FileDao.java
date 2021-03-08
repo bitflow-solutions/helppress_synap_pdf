@@ -1,11 +1,14 @@
 
 package ai.bitflow.helppress.publisher.dao;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
@@ -38,6 +41,7 @@ import ai.bitflow.helppress.publisher.constant.ApplicationConstant;
 import ai.bitflow.helppress.publisher.domain.Contents;
 import ai.bitflow.helppress.publisher.domain.ContentsGroup;
 import ai.bitflow.helppress.publisher.repository.ContentsGroupRepository;
+import ai.bitflow.helppress.publisher.util.SpringUtil;
 import ai.bitflow.helppress.publisher.vo.req.ContentsReq;
 import ai.bitflow.helppress.publisher.vo.tree.Node;
 import okhttp3.OkHttpClient;
@@ -139,30 +143,39 @@ public class FileDao {
 	 */
 	public String updateContentFile(Contents item) {
 		
-		File dir = new File(UPLOAD_ROOT_PATH);
+		File dir = new File(UPLOAD_ROOT_PATH + item.getGroupId());
 		if (!dir.exists()) {
 			boolean success = dir.mkdirs();
 		}
 		 
-		BufferedWriter writer = null;
+//		BufferedWriter writer = null;
 		OutputStream  os = null;
 		String destPdfFilename = UPLOAD_ROOT_PATH + item.getGroupId() + File.separator + item.getId() + ApplicationConstant.EXT_PDF;
+		
 		try {
+			
 			StringBuilder content = new StringBuilder();
 			content.append(getHeader(item.getTitle()));
 			content.append(item.getContent());
 			content.append(getFooter());
 			
-			PdfRendererBuilder builder = new PdfRendererBuilder();
 			os = new FileOutputStream(destPdfFilename);
 //			writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
 //			writer.write(content.toString());
+//			writer.flush();
 			
-			File fontMalgun = new File(FileDao.class.getResource("/static/fonts/MALGUN.TTF").getFile());
+			PdfRendererBuilder builder = new PdfRendererBuilder();
+			
+			File fontMalgun = getResourceAsFile("/static/fonts/MALGUN.TTF");
+			logger.debug("fontMalgun " + fontMalgun.toString());
+			
 			builder.useFont(fontMalgun, "sans-serif");
 			builder.useFont(fontMalgun, "맑은 고딕");
 			builder.useFont(fontMalgun, "Arial");
 			builder.useFont(fontMalgun, "함초롬바탕");
+			builder.useFont(fontMalgun, "HY견명조");
+			builder.useFont(fontMalgun, "HY헤드라인M");
+			builder.useFont(fontMalgun, "나눔고딕");
 			builder.useFont(fontMalgun, "굴림");
 			builder.useFont(fontMalgun, "굴림체");
 			builder.useFont(fontMalgun, "돋움");
@@ -171,32 +184,38 @@ public class FileDao {
 			builder.useFont(fontMalgun, "휴먼명조");
 			builder.useFont(fontMalgun, "궁서");
 			builder.useFont(fontMalgun, "궁서체");
-//			builder.useFont(new File(FileDao.class.getResource("/static/fonts/NanumGothic.ttf").getFile()), "나눔고딕");
-//			builder.useFont(new File(FileDao.class.getResource("/static/fonts/H2HDRM.TTF").getFile()), "HY헤드라인M");
 			
 			W3CDom w3cDom = new W3CDom();
-			String baseUri = "file:///" + dir.getAbsolutePath();
+			String baseUri = "http://localhost:8080/"; // "file:///" + dir.getParentFile().getAbsolutePath();
+			logger.debug("baseUri " + baseUri + " destPdfFilename " + destPdfFilename);
 			Document w3cDoc = w3cDom.fromJsoup(Jsoup.parse(content.toString(), baseUri));
-			builder.withUri(destPdfFilename);
+//			builder.withUri(destPdfFilename);
 			builder.toStream(os);
+			logger.debug("w3cDoc " + w3cDoc.toString()); 
 			builder.withW3cDocument(w3cDoc, baseUri);
+//			builder.withHtmlContent(content.toString(), baseUri);
 			builder.useHttpStreamImplementation(new OkHttpStreamFactory());
             builder.run();
+            
+            if (os!=null) {
+				try {
+					os.close();
+				} catch (IOException e) { }
+			}
+            
+//            if (writer!=null) {
+//				try {
+//					writer.close();
+//				} catch (IOException e) { }
+//			}
+            
 		    return destPdfFilename;
 		} catch (IOException e) {
 			e.printStackTrace();
 			return null;
 		} finally {
-//			if (writer!=null) {
-//				try {
-//					writer.close();
-//				} catch (IOException e) { }
-//			}
-			if (os!=null) {
-				try {
-					os.close();
-				} catch (IOException e) { }
-			}
+			
+			
 		}
 	}
 	
@@ -503,6 +522,31 @@ public class FileDao {
 	
 	    return null;
 	  }
+	}
+    
+    public File getResourceAsFile(String resourcePath) {
+	    try {
+	        InputStream in = this.getClass().getResourceAsStream(resourcePath);
+	        if (in == null) {
+	            return null;
+	        }
+
+	        File tempFile = File.createTempFile(String.valueOf(in.hashCode()), ".tmp");
+	        tempFile.deleteOnExit();
+
+	        try (FileOutputStream out = new FileOutputStream(tempFile)) {
+	            //copy stream
+	            byte[] buffer = new byte[1024];
+	            int bytesRead;
+	            while ((bytesRead = in.read(buffer)) != -1) {
+	                out.write(buffer, 0, bytesRead);
+	            }
+	        }
+	        return tempFile;
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	        return null;
+	    }
 	}
 	
 }

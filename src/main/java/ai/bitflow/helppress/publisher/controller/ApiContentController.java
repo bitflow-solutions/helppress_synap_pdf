@@ -86,13 +86,18 @@ public class ApiContentController {
 				cservice.updatePdfContent(params, groupid, username);
 			}
 
-			UpdateNodeReq params2 = new UpdateNodeReq();
-			params2.setGroupId(groupid);
-			params2.setKey(params.getKey());
-			params2.setMenuCode(params.getMenuCode());
-			NodeUpdateResult res = nservice.updateNode(params2, username);
-			res.setUsername(username);
-			broker.convertAndSend("/node", res);
+			if (params.getMenuCode()!=null && params.getMenuCode().length()>0) {
+				
+				UpdateNodeReq params2 = new UpdateNodeReq();
+				params2.setGroupId(groupid);
+				params2.setKey(params.getKey());
+				params2.setMenuCode(params.getMenuCode());
+				NodeUpdateResult res = nservice.updateNode(params2, username);
+				res.setUsername(username);
+				broker.convertAndSend("/group", res);
+				
+				logger.debug("ws msg sent");
+			}
 		}
 		result.setKey(params.getMenuCode());
 		ret1.setResult(result);

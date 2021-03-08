@@ -64,7 +64,7 @@ var synapEditorConfig = {
     'editor.document.size': {
         'width': 793,
         'height': 1122,
-        'padding': { 'top': 16, 'right': 32, 'bottom': 16, 'left': 32 }
+        'padding': { 'top': 0, 'right': 36, 'bottom': 0, 'left': 36 }
     },
 
     /**
@@ -399,7 +399,7 @@ var synapEditorConfig = {
      * 임포트 API를 설정합니다.
      * ex) '/importAPI'
      */
-    'editor.import.api': '',
+    'editor.import.api': '/importDoc',
 
     /**
      * 임포트 요청 헤더를 설정합니다.
@@ -448,7 +448,7 @@ var synapEditorConfig = {
      * 이미지 업로드 API를 설정합니다.
      * ex) '/imageAPI'
      */
-    'editor.upload.image.api': '',
+    'editor.upload.image.api': '/uploadImage',
 
     /**
      * 이미지 업로드 요청 헤더를 설정합니다.

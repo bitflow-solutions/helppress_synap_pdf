@@ -13,28 +13,31 @@ $(function () {
 			$(".changed-files:enabled").prop("checked", false);
 		}
 	});
+	initSocket();
 });
 
 function downloadFromHistory(id) {
-	if (confirm("해당 버전을 다운로드 하시겠습니까?")) {
+	confirm("해당 버전을 다운로드 하시겠습니까?", function(ret) {
+		$("#snackbar").html("").foundation('close');
 		$(".spinner").show();
 		$("#ifrm").attr("src", "/api/v1/ecm/release/all/" + id);
-		setTimeout(function() {
-			$(".spinner").hide();
-		}, 1000);
-	}
+//		setTimeout(function() {
+//			$(".spinner").hide();
+//		}, 1000);
+	});
 }
 
 function downloadAll() {
 	var release = false;
-	if (confirm("현재 다운로드 버전을 배포 처리로 기록하시겠습니까?")) {
-		release = true;
-	}
-	$(".spinner").show();
-	$("#ifrm").attr("src", "/api/v1/ecm/release/all?release=" + release);
-	setTimeout(function() {
-		$(".spinner").hide();
-	}, 12000);
+	confirm("현재 버전을 배포 처리로 기록하시겠습니까?", function(ret) {
+		$("#snackbar").html("").foundation('close');
+		release = ret;
+		$(".spinner").show();
+		$("#ifrm").attr("src", "/api/v1/ecm/release/all?release=" + release);
+//		setTimeout(function() {
+//			$(".spinner").hide();
+//		}, 12000);
+	});
 }
 
 function downloadChanged() {
@@ -49,13 +52,28 @@ function downloadChanged() {
 		var checkbox = checkboxes[i];
 		fileIds.push(checkbox.value);
 	}
-	if (confirm("배포처리 하시겠습니까?\n배포처리 하시면 변경이력에서 삭제됩니다.")) {
-		release = true;
-    }
-    alert('다운로드에 몇 초 소요됩니다');
-	$(".spinner").show();
-	$("#ifrm").attr("src", "/api/v1/ecm/release/changed?release=" + release + "&fileIds=" + fileIds);
-	setTimeout(function() {
-		$(".spinner").hide();
-	}, 3000);
+	confirm('선택 파일들을 배포 처리 하시겠습니까?<br>"예"를 누르시면 변경파일에서 제외됩니다.', function(ret) {
+		$("#snackbar").html("").foundation('close');
+		release = ret;
+		alert('다운로드에 몇 초 소요됩니다');
+		$(".spinner").show();
+		document.getElementById('ifrm').src = "/api/v1/ecm/release/changed?release=" + release + "&fileIds=" + fileIds;
+    });
+}
+
+function initSocket() {
+	var socket = new SockJS('ws');
+	var stompClient = Stomp.over(socket);
+	stompClient.debug = null;
+	stompClient.connect({}, function (frame) {
+	    console.log("connected");
+        stompClient.subscribe('/download', function (msg) {
+		  var shouldreload = JSON.parse(msg.body);
+          console.log("message: " + shouldreload);
+		  $(".spinner").hide();
+		  if (shouldreload) {
+            location.reload();
+		  }
+        });
+    });
 }

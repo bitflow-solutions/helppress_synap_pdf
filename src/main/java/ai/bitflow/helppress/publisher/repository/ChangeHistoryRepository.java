@@ -52,5 +52,7 @@ public interface ChangeHistoryRepository extends JpaRepository <ChangeHistory, I
 	public List<ChangeHistory> findAllByIdInOrderByFilePathAsc(List<Integer> ids);
 	
 	public List<ChangeHistory> findAllByReleasedOrderByUpdDtAsc(char released);
+	
+	public List<ChangeHistory> findAllByGroupIdAndFilePath(String groupId, String filePath);
 
 }

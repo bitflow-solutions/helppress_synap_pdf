@@ -52,7 +52,7 @@ public class ApiNodeController {
 			NodeUpdateResult res = nservice.newNode(params, username);
 			res.setUsername(username);
 			ret.setResult(res);
-			broker.convertAndSend("/node", res);
+			broker.convertAndSend("/group", res);
 		}
 		
 		return ret;
@@ -75,7 +75,7 @@ public class ApiNodeController {
 			NodeUpdateResult res = nservice.deleteNode(params, username);
 			res.setUsername(username);
 			ret.setResult(res);
-			broker.convertAndSend("/node", res);			
+			broker.convertAndSend("/group", res);			
 		}
 		
 		return ret;
@@ -97,7 +97,7 @@ public class ApiNodeController {
 		} else {
 			NodeUpdateResult res = nservice.updateNode(params, username);
 			ret.setResult(res);
-			broker.convertAndSend("/node", res);
+			broker.convertAndSend("/group", res);
 		}
 
 		return ret;

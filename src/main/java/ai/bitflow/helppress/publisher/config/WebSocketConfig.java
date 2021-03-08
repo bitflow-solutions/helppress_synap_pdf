@@ -25,9 +25,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker("/group", "/download");
         registry.setApplicationDestinationPrefixes("/app");
-        registry.enableSimpleBroker("/group");
-        registry.enableSimpleBroker("/node");
     }
     
 }

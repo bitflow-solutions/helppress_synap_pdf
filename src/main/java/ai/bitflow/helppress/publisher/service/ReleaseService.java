@@ -324,9 +324,9 @@ public class ReleaseService {
 	 * @return
 	 */
 	@Transactional
-	public boolean downloadChanged(List<Integer> fileIds, HttpServletResponse res, String username, Boolean release) {
+	public boolean downloadChanged(List<String> filePaths, HttpServletResponse res, String username, Boolean release) {
 		
-		if (fileIds==null || fileIds.size()<1) {
+		if (filePaths==null || filePaths.size()<1) {
 			return false;
 		}
 		
@@ -345,42 +345,53 @@ public class ReleaseService {
 			return false;
 		}
 		
-		// 
-		List<ChangeHistory> changes = chepo.findAllByIdInOrderByUpdDtDesc(fileIds);
 		
+		// groupId, filePath 
 		int i = 0;
-		for (ChangeHistory change : changes) {
-			logger.debug("fileId " + change.toString());
+		for (String path : filePaths) {
+			logger.debug("path " + path.toString());
+			String groupid = null;
+			String filename = "";
+			String[] paths = path.split("/");
+			// Todo: Change History에서 배포 처리
+			if (paths.length>1) {
+				// 그룹ID, 파일명
+				// 경로가 있으면
+				groupid = paths[0];
+				filename = paths[1];
+				
+			} else {
+				filename = paths[0];
+			}
+			
 			// 도움말그룹인 경우 파일만, 도움말인 경우 파일과 폴더
-			File file = new File(SRC_FOLDER + change.getFilePath());
+			File file = new File(SRC_FOLDER + path);
 			if (file.exists() && file.isFile()) {
 				if (i==0) {
-					ZipUtil.packEntry(file, destFile);
+					ZipUtil.packEntry(file, destFile, path);
 				} else {
 					// duplicate entry: stock.html
-					ZipUtil.addEntry(destFile, change.getFilePath(), file);
+					ZipUtil.addEntry(destFile, path, file);
 				}
-//				String resourcePath = SRC_FOLDER + ApplicationConstant.UPLOAD_REL_PATH + File.separator + fileId;
-//				File resourceDir = new File(resourcePath);
-//				if (resourceDir.exists() && resourceDir.isDirectory()) {
-//					// 도움말 하위 폴더
-//					ZipUtil.addEntry(resourceDir, destFile, ApplicationConstant.UPLOAD_REL_PATH + File.separator + fileId);
-//				}	
+			}
+			
+			if (release) {
+				List<ChangeHistory> releasingfiles = chdao.findByFilename(groupid, filename);
+				for (ChangeHistory item : releasingfiles) {
+					item.setReleased('Y');
+				}
+				chepo.saveAll(releasingfiles);
 			}
 			i++;
 		}
 		
-		// Todo:
-//		if (release) {
-//        	ReleaseHistory item = new ReleaseHistory();
-//        	item.setType(ApplicationConstant.RELEASE_PART);
-//        	item.setFileName(DEST_FILENAME);
-//        	item.setUserid(username);
-//        	rhrepo.save(item);
-//    		long now = Calendar.getInstance().getTimeInMillis();
-//			chdao.addHistory(username, ApplicationConstant.TYPE_RELEASE, ApplicationConstant.METHOD_ADD, 
-//					String.valueOf(item.getId()), destFile.getName(), null, null);
-//		}
+		if (release) {
+        	ReleaseHistory item = new ReleaseHistory();
+        	item.setType(ApplicationConstant.RELEASE_PART);
+        	item.setFileName(DEST_FILENAME);
+        	item.setUserid(username);
+        	rhrepo.save(item);
+		}
 		
 		FileInputStream fis = null;
 		ServletOutputStream out = null;

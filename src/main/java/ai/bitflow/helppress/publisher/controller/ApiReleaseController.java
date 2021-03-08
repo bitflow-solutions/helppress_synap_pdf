@@ -7,9 +7,11 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,13 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ai.bitflow.helppress.publisher.service.ReleaseService;
 import ai.bitflow.helppress.publisher.util.SpringUtil;
-import lombok.extern.slf4j.Slf4j;
+import ai.bitflow.helppress.publisher.vo.res.NodeUpdateRes;
 
 /**
  * 배포를 위한 다운로드
  * @author method76
  */
-@Slf4j
 @RestController
 @RequestMapping("/api/v1/ecm/release") 
 public class ApiReleaseController {
@@ -33,6 +34,9 @@ public class ApiReleaseController {
 	
 	@Autowired
 	private ReleaseService rservice;
+
+	@Autowired 
+	private SimpMessagingTemplate broker;
 	
 	/**
 	 * 전체 파일 ZIP 다운로드
@@ -41,7 +45,7 @@ public class ApiReleaseController {
 	 */
 	@GetMapping("/all") 
 	public void downloadAll(@RequestParam Boolean release, HttpServletResponse res, HttpSession sess) {
-		log.debug("downloadAll " + release);
+		logger.debug("downloadAll " + release);
 		String username = SpringUtil.getSessionUserid(sess);
 		if (username==null || username.length()<1) {
 			try {
@@ -51,6 +55,7 @@ public class ApiReleaseController {
 			}
 		} else {
 			rservice.downloadAll(release, res, username);
+			broker.convertAndSend("/download", release);
 		}
 	}
 	
@@ -61,7 +66,7 @@ public class ApiReleaseController {
 	 */
 	@GetMapping("/{groupId}/{contentId}") 
 	public void downloadOne(@PathVariable String groupId, @PathVariable String contentId, HttpServletResponse res) {
-		log.debug("downloadOne");
+		logger.debug("downloadOne");
 		rservice.downloadOne(groupId, contentId, res);
 	}
 	
@@ -72,7 +77,7 @@ public class ApiReleaseController {
 	 */
 	@GetMapping("/all/{id}") 
 	public void downloadFromHistory(@PathVariable Integer id, HttpServletResponse res) {
-		log.debug("downloadFromHistory");
+		logger.debug("downloadFromHistory");
 		rservice.downloadFromHistory(id, res);
 	}
 	
@@ -82,7 +87,7 @@ public class ApiReleaseController {
 	 */
 	@GetMapping("/changed") 
 	public void downloadChanged(@RequestParam String fileIds, @RequestParam Boolean release, HttpServletResponse res, HttpSession sess) {
-		log.debug("downloadChanged");
+		logger.debug("downloadChanged");
 		String username = SpringUtil.getSessionUserid(sess);
 		if (username==null || username.length()<1) {
 			try {
@@ -92,14 +97,14 @@ public class ApiReleaseController {
 			}
 		} else {
 			String[] fileIdsArr = fileIds.split(",");
-			List<Integer> idList =  new ArrayList<>();
-			for (String id : fileIdsArr) {
-				idList.add(Integer.parseInt(id));
+			List<String> idList =  new ArrayList<>();
+			for (String path : fileIdsArr) {
+				idList.add(path);
 			}
-			
 			if (idList!=null && idList.size()>0) {
 				rservice.downloadChanged(idList, res, username, release);
 			}
+			broker.convertAndSend("/download", release);
 		}
 		
 	}

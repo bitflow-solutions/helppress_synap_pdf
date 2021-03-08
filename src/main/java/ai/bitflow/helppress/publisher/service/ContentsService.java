@@ -50,25 +50,38 @@ public class ContentsService implements ApplicationConstant {
 		PkContents pk = new PkContents(groupId, params.getKey());
 		Optional<Contents> row1 = contentsrepo.findById(pk);
 		logger.debug("row1.isPresent() " + row1.isPresent());
+		String method = null;
 		Contents item1 = null;
-		if (!row1.isPresent()) {
+		if (row1.isPresent()) {
+			// 기존 파일 업데이트
+			item1 = row1.get();
+			if (!params.getKey().equals(params.getMenuCode())) {
+				// 메뉴코드가 바뀐 경우 - 기존 노드 삭제 후 새로 인서트
+				contentsrepo.delete(item1);
+				boolean foundNode = ndao.updateNodeKey(groupId, params.getKey(), params.getMenuCode());
+				pk = new PkContents(groupId, params.getMenuCode());
+				item1 = new Contents();
+				item1.setGroupId(groupId);
+				item1.setId(params.getMenuCode());
+			}
+			method = METHOD_MODIFY;
+		} else {
+			// 새로 저장
 			item1 = new Contents();
 			item1.setGroupId(groupId);
 			item1.setId(params.getMenuCode());
-		} else {
-			// 기존 파일 업데이트
-			item1 = row1.get();
+			method = METHOD_ADD;
 		}
+		
 		item1.setAuthor(userid);
 		item1.setType(ApplicationConstant.TYPE_HTML);
 		item1.setContent(params.getContent());
-		logger.debug("content " + item1.toString());
-		Contents item2 = contentsrepo.save(item1);
-		String destFileName = fdao.updateContentFile(item2);
+		
+		contentsrepo.save(item1);
+		String destFileName = fdao.updateContentFile(item1);
 		
 		// 변경이력 저장
 		String type     = TYPE_CONTENT;
-		String method   = METHOD_MODIFY;
 		String filePath = params.getMenuCode() + ApplicationConstant.EXT_CONTENT;
 
 		File historyFile = new File(destFileName);
@@ -79,7 +92,7 @@ public class ContentsService implements ApplicationConstant {
 				, groupId + "/" + groupId +"-" + filePath.replace(ApplicationConstant.EXT_PDF, "-" + now + ApplicationConstant.EXT_CONTENT)
 				, params.getComment());
 	
-		return String.valueOf(item2.getId());
+		return item1.getId();
 	}
 	
 	@Transactional
@@ -107,12 +120,9 @@ public class ContentsService implements ApplicationConstant {
 				item1.setId(params.getMenuCode());
 				item1.setAuthor(userid);
 				item1.setType(ApplicationConstant.TYPE_PDF);
-			} else {
-				// 메뉴코드가 동일한 경우
 			}
 			method = METHOD_MODIFY;
 		} else {
-			method = METHOD_ADD;
 			// 새로 저장
 			pk = new PkContents(groupId, params.getMenuCode());
 			item1 = new Contents();
@@ -120,6 +130,7 @@ public class ContentsService implements ApplicationConstant {
 			item1.setId(params.getMenuCode());
 			item1.setAuthor(userid);
 			item1.setType(ApplicationConstant.TYPE_PDF);
+			method = METHOD_ADD;
 		}
 		
 		contentsrepo.save(item1);
