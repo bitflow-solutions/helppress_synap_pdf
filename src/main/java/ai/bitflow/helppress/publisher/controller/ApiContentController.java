@@ -19,7 +19,6 @@ import ai.bitflow.helppress.publisher.util.SpringUtil;
 import ai.bitflow.helppress.publisher.vo.req.ContentsReq;
 import ai.bitflow.helppress.publisher.vo.req.UpdateNodeReq;
 import ai.bitflow.helppress.publisher.vo.res.ContentsRes;
-import ai.bitflow.helppress.publisher.vo.res.NodeUpdateRes;
 import ai.bitflow.helppress.publisher.vo.res.result.ContentResult;
 import ai.bitflow.helppress.publisher.vo.res.result.NodeUpdateResult;
 
@@ -104,23 +103,4 @@ public class ApiContentController {
 		return ret1;
 	}
 
-	/**
-	 * 컨텐츠 삭제
-	 * @param id
-	 * @return
-	 */
-	/*
-	@DeleteMapping("/{groupid}/{id}")
-	public ContentsRes delete(@PathVariable String groupid, @PathVariable String id, HttpSession sess) {
-		ContentsRes ret = new ContentsRes();
-		String username = SpringUtil.getSessionUserid(sess);
-		if (username==null) {
-			ret.setFailResponse(401);
-		} else {
-			boolean success = cservice.deleteContent(id, username);
-		}
-		return ret;
-	}
-	*/
-	
 }

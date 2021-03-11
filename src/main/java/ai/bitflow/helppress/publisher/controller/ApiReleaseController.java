@@ -7,7 +7,6 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ai.bitflow.helppress.publisher.service.ReleaseService;
 import ai.bitflow.helppress.publisher.util.SpringUtil;
-import ai.bitflow.helppress.publisher.vo.res.NodeUpdateRes;
 
 /**
  * 배포를 위한 다운로드
