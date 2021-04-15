@@ -77,23 +77,26 @@ public class ApiContentController {
 		if (username==null) {
 			ret1.setFailResponse(401);
 		} else {
+			String res1 = null;
 			if (params.getFile1()==null) {
 				// 에디터로 HTML 수정한 경우
-				cservice.updateContent(params, groupid, username);
+				res1 = cservice.updateContent(params, groupid, username);
 			} else {
 				// PDF파일 업로드 한 경우
-				cservice.updatePdfContent(params, groupid, username);
+				res1 = cservice.updatePdfContent(params, groupid, username);
 			}
 
-			if (params.getMenuCode()!=null && params.getMenuCode().length()>0) {
+			if (res1==null) {
+				ret1.setError("도움말을 수정하지 못했습니다");
+			} else if (params.getMenuCode()!=null && params.getMenuCode().length()>0) {
 				
 				UpdateNodeReq params2 = new UpdateNodeReq();
 				params2.setGroupId(groupid);
 				params2.setKey(params.getKey());
 				params2.setMenuCode(params.getMenuCode());
-				NodeUpdateResult res = nservice.updateNode(params2, username);
-				res.setUsername(username);
-				broker.convertAndSend("/group", res);
+				NodeUpdateResult res2 = nservice.updateNode(params2, username);
+				res2.setUsername(username);
+				broker.convertAndSend("/group", res2);
 				
 				logger.debug("ws msg sent");
 			}

@@ -59,6 +59,9 @@ public class ContentsService implements ApplicationConstant {
 				// 메뉴코드가 바뀐 경우 - 기존 노드 삭제 후 새로 인서트
 				contentsrepo.delete(item1);
 				boolean foundNode = ndao.updateNodeKey(groupId, params.getKey(), params.getMenuCode());
+				if (!foundNode) {
+					return null;
+				}
 				pk = new PkContents(groupId, params.getMenuCode());
 				item1 = new Contents();
 				item1.setGroupId(groupId);

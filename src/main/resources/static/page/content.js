@@ -113,29 +113,27 @@ function initTree() {
     activate: function(e, data){
 	  console.log('activate ' + isEditing);
 	  if (isEditing) {
-		if (confirm("페이지를 벗어나면 글내용이 삭제됩니다.<br>계속하시겠습니까?", function(ret) {
+		confirm("페이지를 벗어나면 글내용이 삭제됩니다.<br>계속하시겠습니까?", function(ret) {
 			console.log("callback " + ret);
 			$("#snackbar").html("").foundation('close');
-			if (!ret) {
-				return;
-			} else {
-				 var node = data.node;
-				  selectedContentId = node.key;
-				  if (!node.folder || node.folder===false) {
-					// 폴더가 아닌경우
-				    selectedContentTitle = node.title;
-				  	// 도움말 표시
-				  	loadPage(node.key);
-					$("#contents-detail").scrollTop();
-				  } else {
-				    // 폴더인 경우
-				  	$("#btn-delete").show();
-				    $("#btn-modify").hide();
-				  	$("#btn-download").hide();
-				  	$("#btn-pdf-upload").hide();
-				  }
+			if (ret===true) {
+			 var node = data.node;
+			  selectedContentId = node.key;
+			  if (!node.folder || node.folder===false) {
+				// 폴더가 아닌경우
+			    selectedContentTitle = node.title;
+			  	// 도움말 표시
+			  	loadPage(node.key);
+				$("#contents-detail").scrollTop();
+			  } else {
+			    // 폴더인 경우
+			  	$("#btn-delete").show();
+			    $("#btn-modify").hide();
+			  	$("#btn-download").hide();
+			  	$("#btn-pdf-upload").hide();
+			  }
 			}
-		}));
+		});
 		e.preventDefault();
 		e.stopPropagation();
 		return false;
@@ -366,7 +364,7 @@ function loadTree() {
  */
 function editContent() {
   console.log('editContent');
-  var url = "/api/v1/ecm/content/" + selectedGroupId + "/" + selectedContentId;
+  var url = URL_API_CONTENT + selectedGroupId + "/" + selectedContentId;
   $.ajax({
 	url: url,
 	method: "GET"
@@ -629,7 +627,8 @@ function deleteContent() {
 	if (node) {
 	  	if (node.folder==true) {
 	  	  // 폴더인 경우
-	  	  if (confirm("도움말폴더와 하위 도움말들이 삭제됩니다. 진행 하시겠습니까?")) {
+	  	  confirm("도움말폴더와 하위 도움말들이 삭제됩니다. 진행 하시겠습니까?", function(ret) {
+			if (ret===true) {
 		  	  // recursive) node.getChildren();
 			  var childContentsArr = [];
 			  getChildrenRecursive(node, childContentsArr);
@@ -652,10 +651,15 @@ function deleteContent() {
 				.fail(function() {
 				})
 				.always(function() {
-			  });
-		  }
-	  	} else {
-	  	  if (confirm("도움말이 삭제됩니다. 진행 하시겠습니까?")) {
+				  $("#snackbar").foundation('close');
+			    });
+			} else {
+				$("#snackbar").foundation('close');
+			}
+		  });
+		} else {
+	  	  confirm("도움말이 삭제됩니다. 진행 하시겠습니까?", function(ret) {
+			if (ret===true) {
 			  $.ajax({
 				  url: URL_API_NODE,
 				  method: "DELETE",
@@ -684,9 +688,13 @@ function deleteContent() {
 				.fail(function() {
 				})
 				.always(function() {
-			  });
+  				  $("#snackbar").foundation('close');
+			    });
+		  } else {
+			$("#snackbar").foundation('close');
 		  }
-		}
+		});
+	  }
 	}
 }
 
@@ -790,13 +798,14 @@ function initSocket() {
  * PDF 파일 업로드
  */
 function handlePdf() {
-	console.log('handlePdf');
     var node = _tree.getActiveNode();
     selectedContentId = node.key;
+	console.log('handlePdf ' + selectedContentId);
     selectedContentTitle = node.title;
 	var form = $('#fileFrm')[0];
 	var formData = new FormData(form);
 	formData.append("file1",   $("#pdfFile")[0].files[0]);
+	formData.append("key",     selectedContentId);
 	formData.append("title",   selectedContentTitle);
 	formData.append("comment", $("#bf-content-comment").val());
 	$("#bf-content-comment").val("");
@@ -805,17 +814,25 @@ function handlePdf() {
 		$("#bf-menu-code").val("");
 	}
 	$.ajax({
-	    url: '/api/v1/ecm/content/' + selectedGroupId,
+	    url: URL_API_CONTENT + selectedGroupId,
         processData: false,
         contentType: false,
         data: formData,
         type: 'PUT'
     })
     .done(function(msg) {
-	  console.log('msg ' + JSON.stringify(msg));
-	  selectedContentId = msg.result.key
+	  if (msg.result) {
+		console.log('msg ' + JSON.stringify(msg));
+		selectedContentId = msg.result.key
+	  }
 	  loadPage(selectedContentId);
-	});
+	})
+    .always(function() {
+	  $("#bf-menu-code").val("");
+	  setTimeout(function() {
+		  $(".spinner").hide();
+	  }, 500);
+  });
 }
 
 $(function() {

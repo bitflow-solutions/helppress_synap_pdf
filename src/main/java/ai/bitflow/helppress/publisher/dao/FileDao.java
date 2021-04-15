@@ -191,8 +191,12 @@ public class FileDao {
 			builder.withW3cDocument(w3cDoc, baseUri);
 //			builder.withHtmlContent(content.toString(), baseUri);
 			builder.useHttpStreamImplementation(new OkHttpStreamFactory());
-            builder.run();
-            
+			try {
+				builder.run();
+			} catch (NullPointerException e1) {
+				e1.printStackTrace();
+			}
+			
             if (os!=null) {
 				try {
 					os.close();
@@ -206,8 +210,8 @@ public class FileDao {
 //			}
             
 		    return destPdfFilename;
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (IOException e2) {
+			e2.printStackTrace();
 			return null;
 		} finally {
 			

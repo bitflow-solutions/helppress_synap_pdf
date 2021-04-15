@@ -220,6 +220,10 @@ public class NodeService {
 			return ret;
 		}
 		
+		logger.debug("foundNode " + foundNode);
+		
+		if (!foundNode) { return ret; }
+		
 		String title = ndao.getGroupTitle(params);
 
 		long now = Calendar.getInstance().getTimeInMillis();
@@ -239,7 +243,7 @@ public class NodeService {
 
 		ret.setMethod(method);
 		ret.setUsername(userid);
-		ret.setKey(params.getKey());
+		ret.setKey(params.getMenuCode());
 		ret.setGroupId(params.getGroupId());
 		ret.setTitle(params.getTitle());
 		

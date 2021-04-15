@@ -88,10 +88,13 @@ public class NodeDao {
 		} else {
 			item1 = row.get();
 			List<Node> tree = new Gson().fromJson(item1.getTree(), new TypeToken<List<Node>>(){}.getType());
-			findNodeAndUpdate(tree, before, after);
-			String treeStr = new Gson().toJson(tree);
-			item1.setTree(treeStr);
-			grepo.save(item1);
+			String newKey = findNodeAndUpdate(tree, before, after);
+			if (newKey!=null) {
+				String treeStr = new Gson().toJson(tree);
+				item1.setTree(treeStr);
+				grepo.save(item1);
+				found = true;
+			}
 			return found;
 		}
 	}
@@ -118,20 +121,40 @@ public class NodeDao {
 		}
 	}
 	
-	private void findNodeAndUpdate(List<Node> nodes, String before, String after) {
+	/**
+	 * 특정키에 해당하는 노드를 찾아서 키 수정
+	 * @param nodes
+	 * @param before
+	 * @param after
+	 * @return
+	 */
+	private String findNodeAndUpdate(List<Node> nodes, String before, String after) {
 		if (nodes!=null && nodes.size()>0) {
 			for (Node item : nodes) {
-				if (item.getKey().equals(before)) {
-					item.setKey(after);
-					logger.debug("found item to delete");
-					break;
-				} else {
+//				logger.debug("isfolder " + item.getFolder() + " key " + before + " =? " + item.getKey());
+				if (item.getFolder()!=null && item.getFolder()==true) {
+					// 폴더인 경우
 					if (item.getChildren()!=null && item.getChildren().size()>0) {
-						findNodeAndUpdate(item.getChildren(), before, after);
-					}
+						// 자식 도움말이 있는 경우
+						String childkey = findNodeAndUpdate(item.getChildren(), before, after);
+						if (childkey!=null) { 
+							return childkey;
+						} else {
+							continue;
+						}
+					} else {
+						// 자식 도움말이 없는 경우
+						continue;
+					} 
+				} else if (item.getKey().equals(before)) {
+					// 도움말이면서 키가 같은 경우
+					item.setKey(after);
+					logger.debug("found item to update");
+					return after;
 				}
 			}
 		}
+		return null;
 	}
 	
 	private void findNodeAndDelete(List<Node> nodes, String key) {
