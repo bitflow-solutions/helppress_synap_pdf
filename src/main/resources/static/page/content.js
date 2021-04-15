@@ -473,6 +473,7 @@ function doUpload() {
   	$("#err-no-comment").hide();
 	$("#bf-modal-comment").foundation('close');
 	if (contentType=='PDF') {
+    	$("#pdfFile").val(null);
     	$("#pdfFile").click();
     } else {
 	  editContent();

@@ -1,21 +1,25 @@
 package ai.bitflow.helppress.publisher.service;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ai.bitflow.helppress.publisher.constant.ApplicationConstant;
 import ai.bitflow.helppress.publisher.dao.ChangeHistoryDao;
 import ai.bitflow.helppress.publisher.dao.FileDao;
+import ai.bitflow.helppress.publisher.domain.Contents;
 import ai.bitflow.helppress.publisher.domain.ContentsGroup;
 import ai.bitflow.helppress.publisher.repository.ContentsGroupRepository;
+import ai.bitflow.helppress.publisher.repository.ContentsRepository;
 import ai.bitflow.helppress.publisher.vo.req.ContentsGroupReq;
 
 /**
@@ -26,6 +30,12 @@ import ai.bitflow.helppress.publisher.vo.req.ContentsGroupReq;
 public class ContentsGroupService {
 
 	private final Logger logger = LoggerFactory.getLogger(ContentsGroupService.class);
+	
+	@Value("${app.upload.root.path}")
+	private String SRC_FOLDER;
+
+	@Autowired
+	private ContentsRepository crepo;
 	
 	@Autowired
 	private ContentsGroupRepository grepo;
@@ -41,7 +51,6 @@ public class ContentsGroupService {
 	 * 전체 카테고리 조회
 	 * @return
 	 */
-	@Cacheable(value="groups")
 	public List<ContentsGroup> getGroups() {
 		return grepo.findAllByOrderByOrderNo();
     }
@@ -65,7 +74,6 @@ public class ContentsGroupService {
 	 * @param params
 	 * @return
 	 */
-	@CacheEvict(value="groups", allEntries=true)
 	@Transactional
     public String newGroup(ContentsGroupReq params, String userid) {
 		
@@ -88,7 +96,6 @@ public class ContentsGroupService {
 	 * @param params
 	 * @return
 	 */
-	@CacheEvict(value="groups", allEntries=true)
 	@Transactional
     public ContentsGroup updateGroup(ContentsGroupReq params, String userid) {
 		
@@ -123,19 +130,34 @@ public class ContentsGroupService {
 	 * Todo: 그룹 파일도 삭제
 	 * @param id
 	 */
-	@CacheEvict(value="groups", allEntries=true)
 	@Transactional
     public void deleteGroup(String groupid, String userid) {
 		
 		String type   = ApplicationConstant.TYPE_GROUP;
 		String method = ApplicationConstant.METHOD_DELETE;
-		Optional<ContentsGroup> row = grepo.findById(groupid);
-		
-		if (row.isPresent()) {
-			ContentsGroup item = row.get();
-			grepo.deleteById(groupid);
+		Optional<ContentsGroup> row1 = grepo.findById(groupid);
+		// 1) CONTENTS_GROUP 테이블의 행삭제
+		if (row1.isPresent()) {
+			grepo.delete(row1.get());
 			List<ContentsGroup> list = grepo.findAll();
 			fdao.makeAllContentGroupHTML(list, method, userid);
+		}
+		
+		// 2) CONTENTS 테이블의 행삭제
+		List<Contents> items = crepo.findAllByGroupId(groupid);
+		if (items!=null && items.size()>0) {
+			crepo.deleteAll(items);
+		}
+		
+		// 3) 디렉토리 및 파일 삭제
+		File groupdir = new File(SRC_FOLDER + groupid);
+		if(groupdir.exists() && groupdir.isDirectory()) {
+			try {
+				FileUtils.cleanDirectory(groupdir);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			groupdir.delete();
 		}
 		
     }

@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +14,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,9 +29,11 @@ import ai.bitflow.helppress.publisher.constant.ApplicationConstant;
 import ai.bitflow.helppress.publisher.dao.ChangeHistoryDao;
 import ai.bitflow.helppress.publisher.domain.ChangeHistory;
 import ai.bitflow.helppress.publisher.domain.Contents;
+import ai.bitflow.helppress.publisher.domain.ContentsGroup;
 import ai.bitflow.helppress.publisher.domain.ReleaseHistory;
 import ai.bitflow.helppress.publisher.domain.idclass.PkContents;
 import ai.bitflow.helppress.publisher.repository.ChangeHistoryRepository;
+import ai.bitflow.helppress.publisher.repository.ContentsGroupRepository;
 import ai.bitflow.helppress.publisher.repository.ContentsRepository;
 import ai.bitflow.helppress.publisher.repository.ReleaseHistoryRepository;
 
@@ -59,6 +63,9 @@ public class ReleaseService {
 	
 	@Autowired
 	private ContentsRepository crepo;
+	
+	@Autowired
+	private ContentsGroupRepository cgrepo;
 	
 	@Autowired
 	private ChangeHistoryRepository chepo;
@@ -96,8 +103,58 @@ public class ReleaseService {
 		
 		String destFilePath = DEST_FOLDER + DEST_FILENAME;
 		File destFile = new File(destFilePath);
+		List<ContentsGroup> list = cgrepo.findAll();
+		List<String> grouphtmls = new ArrayList<>();
+		grouphtmls.add("index" + ApplicationConstant.EXT_HTML);
+		
+		if (ApplicationConstant.EXT_CONTENT.equals(ApplicationConstant.EXT_PDF)) {
+			File uploads = new File(SRC_FOLDER + "uploads");
+			if(uploads.exists() && uploads.isDirectory()) {
+				try {
+					FileUtils.cleanDirectory(uploads);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				uploads.delete();
+			}
+		}
+		
+		for (ContentsGroup item : list) {
+			grouphtmls.add(item.getGroupId() + ApplicationConstant.EXT_HTML);
+		}
+		
+		File[] rootfiles = new File(SRC_FOLDER).listFiles();
+		for (File rootfile : rootfiles) {
+			if (rootfile.isFile() && !grouphtmls.contains(rootfile.getName())) {
+				rootfile.delete();
+			}
+		}
+		
+		for (ContentsGroup item : list) {
+			
+			String groupdirstr = SRC_FOLDER + item.getGroupId();
+			
+			// 3) select all PDF/HTML from CONTENTS table
+			List<Contents> contents = crepo.findAll();
+			List<String> contentfiles = new ArrayList<>();
+			for (Contents content : contents) {
+				contentfiles.add(content.getId() + ApplicationConstant.EXT_CONTENT);
+			}
+			//
+			File groupdir = new File(groupdirstr);
+			if (groupdir.exists() && groupdir.isDirectory()) {
+				File[] contentsfiles = groupdir.listFiles();
+				for (File contentfile : contentsfiles) {
+					if (contentfile.isFile() && !contentfiles.contains(contentfile.getName())) {
+						contentfile.delete();
+					}
+				}
+			}
+		}
+		
+		// 1) pack all in the Export directory
 		ZipUtil.pack(new File(SRC_FOLDER), destFile);
-
+		
 		FileInputStream fis = null;
 		ServletOutputStream out = null;
 		

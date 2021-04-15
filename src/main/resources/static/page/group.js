@@ -56,20 +56,23 @@ function validateInput() {
 
 $(function() {
 	$("#btn-delete").click(function () {
-		if (confirm("선택한 도움말그룹과 하위 도움말들이 모두 삭제됩니다.\n정말로 삭제하시겠습니까?")) {
-			var url = "/api/v1/ecm/group/" + $("#groupId").val();
-			$.ajax({
-				url: url,
-				method: "DELETE",
-				data: { }
-			})
-			.done(function(msg) {
-				if (msg.status===200) {
-					// 성공
-					location.reload();
-				}
-			});
-		}
+		confirm("선택한 도움말그룹과 하위 도움말들이 모두 삭제됩니다.\n정말로 삭제하시겠습니까?", function(ret) {
+			$("#snackbar").html("").foundation('close');
+			if (ret===true) {
+				var url = "/api/v1/ecm/group/" + $("#groupId").val();
+				$.ajax({
+					url: url,
+					method: "DELETE",
+					data: { }
+				})
+				.done(function(msg) {
+					if (msg.status===200) {
+						// 성공
+						location.reload();
+					}
+				});
+			}
+		});
 	});
 	$("#btn-modify").click(function () {
 		if (!validateInput()) {
